@@ -1,0 +1,38 @@
+import clr
+clr.AddReference('ProtoGeometry')
+from Autodesk.DesignScript.Geometry import *
+#The inputs to this node will be stored as a list in the IN variables.
+solid = IN[0]
+seed = IN[1]
+xCount = IN[2]
+yCount = IN[3]
+
+solids = []
+crvs = []
+
+edges = solid.Edges
+for edge in edges:
+	crvs.append(edge.CurveGeometry)
+	
+bbox = BoundingBox.ByGeometry(crvs)
+yDist = bbox.MaxPoint.Y-bbox.MinPoint.Y
+xDist = bbox.MaxPoint.X-bbox.MinPoint.X
+
+xRange = list(range(xCount))
+yRange = list(range(yCount))
+
+fromCoord = solid.ContextCoordinateSystem
+ 
+#Loop through X and Y
+for i in xRange:
+	for j in yRange:
+		#Rotate and translate the coordinate system
+		toCoord = fromCoord.Rotate(solid.ContextCoordinateSystem.Origin,Vector.ByCoordinates(0,0,1),(90*(i+j%seed)))
+		vec = Vector.ByCoordinates((xDist*i),(yDist*j),0)
+		toCoord = toCoord.Translate(vec)
+		#Transform the solid from the source coordinate system to the target coordinate system and append to the list
+		solids.append(solid.Transform(fromCoord,toCoord))
+
+
+#Assign your output to the OUT variable.
+OUT = solids
